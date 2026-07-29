@@ -6,8 +6,12 @@ same UI and API route; the only difference is how the search endpoint
 constructs its SQL query, controlled by the `APP_MODE` environment variable.
 
 > **This app is intentionally vulnerable in one mode, for educational
-> purposes only.** Never deploy it publicly, and never point it at a
-> database containing real user data.
+> purposes only.** Never point it at a database containing real user data.
+> This project is deployed publicly on Vercel against the team's own
+> Supabase project as a deliberate, accepted risk for course demo
+> purposes — see "Accepted risk / production deployment" in
+> [`docs/EXPLOITS.md`](docs/EXPLOITS.md) before deploying a copy of your
+> own.
 
 ## Stack
 
@@ -40,13 +44,19 @@ constructs its SQL query, controlled by the `APP_MODE` environment variable.
    the direct host will fail with `ENETUNREACH` and you must use the
    pooler host instead, which supports IPv4.
 
-3. Run the database migration: open your Supabase project's SQL Editor,
-   paste the full contents of `migrations/001_init.sql`, and run it. This
-   creates the `jobs` and `users` tables, seeds ~20 jobs and 5 fake users
-   (including one admin), and creates a least-privilege
-   `readonly_search_role` used by the secure build.
+3. Run the database migrations, in order, in your Supabase project's SQL
+   Editor:
+   - `migrations/001_init.sql` — creates the `jobs` and `users` tables,
+     seeds ~20 jobs and 5 fake users (including one admin), and creates a
+     least-privilege `readonly_search_role` used by the secure build.
+   - `migrations/002_vuln_demo_role.sql` — creates `vuln_demo_role`, a
+     SELECT-only (on both `jobs` and `users`) role used by the vulnerable
+     build. This bounds the vulnerable build's blast radius: injected reads
+     (UNION, boolean-blind, time-based) still work, but any stacked
+     destructive statement (`DROP TABLE`, `DELETE`, etc.) fails with a
+     Postgres permission error instead of executing.
 
-   Sanity check (optional, at the bottom of the migration file, commented
+   Sanity check (optional, at the bottom of each migration file, commented
    out): run `SELECT count(*) FROM jobs;` (expect 20) and
    `SELECT count(*) FROM users;` (expect 5).
 
@@ -71,8 +81,43 @@ Set `APP_MODE` in `.env` to either:
 reads environment variables once at process startup, so a running server
 will not pick up the change.
 
+The default is fail-safe: only the exact string `vulnerable` enables the
+exploit path. If `APP_MODE` is unset, empty, or misspelled, the app runs
+in secure mode.
+
 Both modes behave identically for normal searches; the current mode is
 shown as a badge on the `/jobs` page.
+
+## Deploying to Vercel
+
+1. Link the Vercel project to this repository.
+2. In Vercel → Project Settings → Environment Variables, set:
+
+   | Key | Value |
+   |---|---|
+   | `host` | Supabase Session Pooler host, e.g. `aws-0-<region>.pooler.supabase.com` |
+   | `port` | `5432` |
+   | `database` | `postgres` |
+   | `user` | `postgres.<project-ref>` |
+   | `password` | your Supabase DB password (mark as "Sensitive") |
+   | `APP_MODE` | `secure` (recommended resting state) or `vulnerable` |
+
+   `connection_string` from `.env.example` is unused by the app code and
+   can be omitted from Vercel.
+
+3. Deploy. No changes to `next.config.ts` or `package.json` are required
+   for a standard Vercel build.
+
+**Changing `APP_MODE` on Vercel requires a redeploy** — unlike local dev,
+saving a new value for an environment variable in the Vercel dashboard
+does not affect an already-built deployment. After changing `APP_MODE`,
+trigger a redeploy (Deployments tab → Redeploy, or push a commit) before
+the new mode takes effect.
+
+**After any vulnerable-mode demo/grading window, flip `APP_MODE` back to
+`secure` and redeploy immediately.** See "Accepted risk / production
+deployment" in `docs/EXPLOITS.md` for the reasoning and mitigations behind
+running the vulnerable build publicly at all.
 
 ## Exploit documentation
 
