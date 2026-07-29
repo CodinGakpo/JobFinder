@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getPool, getReadOnlyClient, isSecureMode } from "@/lib/db";
+import { getReadOnlyClient, getVulnDemoClient, isSecureMode } from "@/lib/db";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -31,13 +31,20 @@ export async function GET(req: NextRequest) {
     }
   } else {
     // ---------------- VULNERABLE PATH (intentionally unsafe, for demo only) ----------------
-    const pool = getPool();
+    // SQL is still built via raw concatenation and executed as a plain string
+    // (simple query protocol, stacked queries possible) — that's the point of
+    // this branch. The connection is downgraded to vuln_demo_role so a
+    // successful stacked DROP/DELETE/UPDATE fails on permissions instead of
+    // actually damaging data; UNION/boolean/time-based reads are unaffected.
+    const client = await getVulnDemoClient();
     const sql = `SELECT title, company, location, salary FROM jobs WHERE title ILIKE '%${keywordRaw}%' ${companyRaw ? `AND company ILIKE '%${companyRaw}%'` : ""} ORDER BY posted_at DESC LIMIT 50`;
     try {
-      const { rows } = await pool.query(sql);
+      const { rows } = await client.query(sql);
       return NextResponse.json({ mode: "vulnerable", results: rows, sql });
     } catch (err: any) {
       return NextResponse.json({ mode: "vulnerable", error: String(err), sql }, { status: 500 });
+    } finally {
+      client.release(true);
     }
   }
 }
