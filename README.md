@@ -119,6 +119,30 @@ the new mode takes effect.
 deployment" in `docs/EXPLOITS.md` for the reasoning and mitigations behind
 running the vulnerable build publicly at all.
 
+## Testing
+
+The Playwright suite (`tests/jobs-ui.spec.ts`, `tests/injection.spec.ts`)
+covers the search UI and all three injection types. The injection spec
+detects the server's current `mode` at runtime and asserts the correct
+outcome for whichever mode is live, so it's safe to run against either
+build without editing anything.
+
+Run locally against `npm run dev` (`http://localhost:3000`):
+```bash
+npm run test
+```
+
+Run against a deployed URL, including production:
+```bash
+PLAYWRIGHT_TEST_BASE_URL=https://your-deployment.vercel.app npx playwright test
+```
+
+Both spec files (8 tests) have been verified passing against
+`https://job-finder-zeta-henna.vercel.app` in both `secure` and
+`vulnerable` mode, including a manual confirmation that a destructive
+stacked-query payload is blocked by `vuln_demo_role` in production (see
+`docs/EXPLOITS.md` section 6).
+
 ## Exploit documentation
 
 See [`docs/EXPLOITS.md`](docs/EXPLOITS.md) for the exact payloads used for
