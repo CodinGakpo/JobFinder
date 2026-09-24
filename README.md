@@ -214,6 +214,22 @@ Visit [http://localhost:3000/jobs](http://localhost:3000/jobs).
 
 ## Toggling modes
 
+### In the browser (no redeploy, no env change)
+
+Sign in at `/login` with the single hardcoded demo account
+(`demo` / `jobfinder-demo`, defined in `src/lib/auth.ts`). On `/jobs`, a
+Secure / Vulnerable switch appears; it stores a `mode_override` cookie for
+**that browser only**, and the override ends on sign-out or when the browser
+closes. Anonymous visitors cannot switch and always get the `APP_MODE`
+default, so a public deployment stays in secure mode for everyone else. The
+`/exploits` page lists the demo payloads and how each one works.
+
+The login is a gate for a course demo, not real account security: the
+credentials and session-signing secret are hardcoded on purpose so that no
+hosting-dashboard env vars are needed.
+
+### Default mode (`APP_MODE`)
+
 Set `APP_MODE` in `.env` to either:
 
 - `vulnerable` — the search endpoint builds SQL via raw string

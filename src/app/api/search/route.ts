@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getReadOnlyClient, getVulnDemoClient, isSecureMode } from "@/lib/db";
+import { getReadOnlyClient, getVulnDemoClient } from "@/lib/db";
+import { resolveMode } from "@/lib/mode";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const keywordRaw = searchParams.get("keyword") ?? "";
   const companyRaw = searchParams.get("company") ?? "";
 
-  if (isSecureMode()) {
+  if ((await resolveMode()) === "secure") {
     // ---------------- SECURE PATH ----------------
     if (keywordRaw.length > 100 || companyRaw.length > 100) {
       return NextResponse.json({ error: "Query too long" }, { status: 400 });
