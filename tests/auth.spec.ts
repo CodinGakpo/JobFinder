@@ -58,4 +58,22 @@ test.describe("Auth and mode toggle", () => {
     await expect(page.getByRole("heading", { name: "Exploits", level: 1 })).toBeVisible();
     await expect(page.getByText("UNION-based")).toBeVisible();
   });
+
+  test("Run button executes the payload live and reflects the current mode", async ({ page }) => {
+    await page.goto("/exploits");
+    const unionCard = page.locator("section", { hasText: "UNION-based" });
+
+    // Signed out: default mode, no exploit effect.
+    await unionCard.getByRole("button", { name: "Run" }).click();
+    await expect(unionCard.getByText(/mode: secure/)).toBeVisible();
+    await expect(unionCard.getByText("0 rows returned")).toBeVisible();
+
+    // Signed in and switched to vulnerable: the same button now leaks users via jobs columns.
+    await page.request.post("/api/login", { data: CREDS });
+    await page.request.post("/api/mode", { data: { mode: "vulnerable" } });
+    await page.reload();
+    await unionCard.getByRole("button", { name: "Run" }).click();
+    await expect(unionCard.getByText(/mode: vulnerable/)).toBeVisible();
+    await expect(unionCard.locator("table")).toContainText("@");
+  });
 });
