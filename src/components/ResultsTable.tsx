@@ -7,33 +7,47 @@ type Job = {
 
 export default function ResultsTable({ results }: { results: Job[] }) {
   if (results.length === 0) {
-    return <p className="mt-8 text-sm text-zinc-500 dark:text-zinc-400">No results.</p>;
+    return (
+      <div className="mt-8 rounded-xl border border-dashed border-zinc-300 px-6 py-12 text-center dark:border-zinc-700">
+        <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">No results.</p>
+        <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+          Try a different keyword or clear the company filter.
+        </p>
+      </div>
+    );
   }
 
+  const th = "px-4 py-3 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400";
+
   return (
-    <div className="mt-8 overflow-x-auto">
-      <table className="w-full border-collapse text-sm">
-        <thead>
-          <tr className="border-b border-zinc-300 text-left dark:border-zinc-700">
-            <th className="py-2 pr-4 font-medium text-zinc-700 dark:text-zinc-300">Title</th>
-            <th className="py-2 pr-4 font-medium text-zinc-700 dark:text-zinc-300">Company</th>
-            <th className="py-2 pr-4 font-medium text-zinc-700 dark:text-zinc-300">Location</th>
-            <th className="py-2 pr-4 font-medium text-zinc-700 dark:text-zinc-300">Salary</th>
-          </tr>
-        </thead>
-        <tbody>
-          {results.map((job, i) => (
-            <tr key={i} className="border-b border-zinc-100 dark:border-zinc-800">
-              <td className="py-2 pr-4">{job.title}</td>
-              <td className="py-2 pr-4">{job.company}</td>
-              <td className="py-2 pr-4">{job.location}</td>
-              <td className="py-2 pr-4">
-                {typeof job.salary === "number" ? `$${job.salary.toLocaleString()}` : job.salary}
-              </td>
+    <div className="mt-8">
+      <p className="mb-2 text-sm text-zinc-500 dark:text-zinc-400">
+        {results.length} {results.length === 1 ? "job" : "jobs"} found
+      </p>
+      <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+        <table className="w-full border-collapse text-sm">
+          <thead className="bg-zinc-50 dark:bg-zinc-800/50">
+            <tr className="border-b border-zinc-200 text-left dark:border-zinc-800">
+              <th className={th}>Title</th>
+              <th className={th}>Company</th>
+              <th className={th}>Location</th>
+              <th className={`${th} text-right`}>Salary</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+            {results.map((job, i) => (
+              <tr key={i} className="transition-colors hover:bg-indigo-50/50 dark:hover:bg-zinc-800/60">
+                <td className="px-4 py-3 font-medium text-zinc-900 dark:text-zinc-50">{job.title}</td>
+                <td className="px-4 py-3 text-zinc-700 dark:text-zinc-300">{job.company}</td>
+                <td className="px-4 py-3 text-zinc-700 dark:text-zinc-300">{job.location}</td>
+                <td className="px-4 py-3 text-right tabular-nums text-zinc-700 dark:text-zinc-300">
+                  {typeof job.salary === "number" ? `$${job.salary.toLocaleString()}` : job.salary}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

@@ -12,7 +12,12 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Query too long" }, { status: 400 });
     }
 
-    const client = await getReadOnlyClient(); // SET ROLE readonly_search_role
+    let client;
+    try {
+      client = await getReadOnlyClient(); // SET ROLE readonly_search_role
+    } catch {
+      return NextResponse.json({ mode: "secure", error: "Database unavailable" }, { status: 503 });
+    }
     try {
       const sql = `
         SELECT title, company, location, salary
@@ -36,7 +41,12 @@ export async function GET(req: NextRequest) {
     // this branch. The connection is downgraded to vuln_demo_role so a
     // successful stacked DROP/DELETE/UPDATE fails on permissions instead of
     // actually damaging data; UNION/boolean/time-based reads are unaffected.
-    const client = await getVulnDemoClient();
+    let client;
+    try {
+      client = await getVulnDemoClient();
+    } catch {
+      return NextResponse.json({ mode: "vulnerable", error: "Database unavailable" }, { status: 503 });
+    }
     const sql = `SELECT title, company, location, salary FROM jobs WHERE title ILIKE '%${keywordRaw}%' ${companyRaw ? `AND company ILIKE '%${companyRaw}%'` : ""} ORDER BY posted_at DESC LIMIT 50`;
     try {
       const { rows } = await client.query(sql);
