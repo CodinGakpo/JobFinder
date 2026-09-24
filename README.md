@@ -197,9 +197,11 @@ Two least-privilege Postgres roles, granted only what each build's
    - `migrations/001_init.sql` — creates the `jobs` and `users` tables,
      seeds the data described above, and creates `readonly_search_role`.
    - `migrations/002_vuln_demo_role.sql` — creates `vuln_demo_role`.
+   - `migrations/003_more_jobs.sql` — optional; adds 20 more jobs and 3
+     more companies (safe to re-run).
 
    Sanity check (optional, at the bottom of each migration file, commented
-   out): run `SELECT count(*) FROM jobs;` (expect 20) and
+   out): run `SELECT count(*) FROM jobs;` (expect 20, or 40 after 003) and
    `SELECT count(*) FROM users;` (expect 5).
 
 ## Running the app
